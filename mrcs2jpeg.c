@@ -322,10 +322,10 @@ void write_JPEG_file (char * filename, int quality, unsigned char *image_buffer,
 int main ( int argc, char *argv[] )
 { 
 
-    if (argc != 6)
+    if (argc != 7)
     {
-        printf("Usage: %s <mrc file name> <output directory> <pMean> <pStd> <sNormalized>\n", argv[0]);
-        printf("e.g: %s image.mrcs output 0 3 1\n", argv[0]);
+        printf("Usage: %s <mrc file name> <output directory> <pMean> <pStd> <sNormalized> <fileType>\n", argv[0]);
+        printf("e.g: %s image.mrcs output 0 3 1 sJPEG\n", argv[0]);
         exit(-1);
     }
 
@@ -351,6 +351,42 @@ int main ( int argc, char *argv[] )
     int mod = mrcInstance.header.mod;
 
     printf("[nx, ny, nz] = [%d, %d, %d]\n", nx, ny, nz);
+
+
+
+    /**
+     *  write nx, ny, nz to meta.txt
+     */
+
+    char metaFilename[1024];
+    /*strcat(metaFilename, "/meta.txt");*/
+    sprintf(metaFilename, "%s/meta.txt", argv[2]);
+    printf("meta file name: %s\n", metaFilename);
+    FILE *metaFile = fopen(metaFilename, "w");
+    char pDimXStr[64];
+    char pDimYStr[64];
+    char pDimZStr[64];
+
+
+    if(strcmp(argv[6], "sJPEG") == 0)
+    {
+        fputs("sUChar\n", metaFile);
+    }
+    else
+    {
+        fputs("sReal32\n", metaFile);
+    }
+
+    sprintf(pDimXStr, "pDimX=%d\n", nx);
+    sprintf(pDimYStr, "pDimY=%d\n", ny);
+    sprintf(pDimZStr, "pDimZ=%d\n", nz);
+    
+    fputs(pDimXStr, metaFile);
+    fputs(pDimYStr, metaFile);
+    fputs(pDimZStr, metaFile);
+
+    fclose(metaFile);
+
 
     if(mod != 2)
     {
