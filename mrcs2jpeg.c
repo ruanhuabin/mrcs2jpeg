@@ -92,6 +92,51 @@ void print_mrc_header(mrc_header_t *header)
     printf("image data type   : mod = %d\n", header->mod);
 }
 
+void getMeanStd(float *data, size_t n, float &mean, float &std)
+{
+    float sum = 0.0f;
+    for(size_t i = 0; i < n; i ++)
+    {
+        sum += data[i];
+    }
+
+    mean = sum / n;
+
+    float variance = 0.0f;
+    for(size_t i = 0; i < n; i ++)
+    {
+        variance += pow((data[i] - mean), 2);
+    }
+
+    variance /= n;
+
+    std = sqrt(variance);
+}
+
+
+void preProcessImage(float *data, size_t n, float pMean, float pStd)
+{
+    float mean;
+    float std;
+    getMeanStd(data, n, mean, std);
+
+    float maxValue = mean + (pMean + pStd) * std;
+    float minValue = mean + (pMean -pStd) * std;
+    for(size_t i = 0; i < n; i ++)
+    {
+        if(data[i] > maxValue)
+        {
+            printf("max value is changed: orig = %f, new = %f, max = %f\n", data[i], maxValue, maxValue);
+            data[i] = maxValue;
+        }
+
+        if(data[i] < minValue)
+        {
+            printf("min value is changed: orig = %f, new = %f, min = %f\n", data[i], minValue, minValue);
+            data[i] = minValue;
+        }
+    }
+}
 void getMinMax(float *data, int n, float& min, float& max, int& minIndex, int& maxIndex)
 {
     min = data[0];
@@ -276,14 +321,19 @@ void write_JPEG_file (char * filename, int quality, unsigned char *image_buffer,
 
 int main ( int argc, char *argv[] )
 { 
-    if (argc != 3)
+
+    if (argc != 6)
     {
-        printf("Usage: %s <mrc file name> <output directory>\n", argv[0]);
-        printf("e.g: %s image.mrcs output\n", argv[0]);
+        printf("Usage: %s <mrc file name> <output directory> <pMean> <pStd> <sNormalized>\n", argv[0]);
+        printf("e.g: %s image.mrcs output 0 3 1\n", argv[0]);
         exit(-1);
     }
 
     FILE *mrcFile = fopen(argv[1], "rb");
+
+    float pMean = atof(argv[3]);
+    float pStd = atof(argv[4]);
+    int sNormalized = atoi(argv[5]);
 
     if (mrcFile == NULL)
     {
@@ -308,7 +358,7 @@ int main ( int argc, char *argv[] )
         exit(1);
     }
 
-    int n = nx * ny;
+    size_t n = nx * ny;
     mrcInstance.imageData = (float *)malloc(n * sizeof(float));
     unsigned char *grayData = (unsigned char *)malloc(n * sizeof(unsigned char));
     float min = 0.0f;
@@ -325,6 +375,12 @@ int main ( int argc, char *argv[] )
     for(int i = 0; i < nz; i ++)
     {
         fread(mrcInstance.imageData, sizeof(float), nx * ny, mrcFile);
+
+        if(sNormalized != 0)
+        {
+            preProcessImage(mrcInstance.imageData, n, pMean, pStd);
+        }
+
         getMinMax(mrcInstance.imageData, n, min, max, minIndex, maxIndex); 
         printf("[min, max, minIndex, maxIndex] = [%f, %f, %d, %d]\n", min, max, minIndex, maxIndex);
         if(min < 0)
