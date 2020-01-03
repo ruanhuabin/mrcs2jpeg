@@ -387,6 +387,7 @@ int main ( int argc, char *argv[] )
           break;
 
         case 'i':
+          /*printf("input file name: %s\n", optarg);*/
           strcpy(inputFilename, optarg); 
           break;
 
@@ -406,7 +407,7 @@ int main ( int argc, char *argv[] )
     
     }
 
-    printf("input = %s, output = %s, sNormalized = %d, sJPEG = %d, sRAW = %d, sMRC = %d,  pMean = %f, pStd = %f\n", inputFilename, outputDir, sNormalized, sJPEG, sRAW, sMRC, pMean, pStd);
+    /*printf("input = %s, output = %s, sNormalized = %d, sJPEG = %d, sRAW = %d, sMRC = %d,  pMean = %f, pStd = %f\n", inputFilename, outputDir, sNormalized, sJPEG, sRAW, sMRC, pMean, pStd);*/
 
     /*return 0;*/
 
@@ -415,27 +416,27 @@ int main ( int argc, char *argv[] )
 
     if (mrcFile == NULL)
     {
-        printf("Open input file [%s] failed: [%s:%d]", inputFilename, __FILE__, __LINE__);
+        printf("Open input file [%s] failed: [%s:%d]\n", inputFilename, __FILE__, __LINE__);
         exit(-1);
     }
 
 
     mrc_fmt_t mrcInstance;
     fread(&mrcInstance.header, sizeof(mrc_header_t), 1, mrcFile);
-    print_mrc_header(&mrcInstance.header);
+    /*print_mrc_header(&mrcInstance.header);*/
     int nx = mrcInstance.header.nx;
     int ny = mrcInstance.header.ny;
     int nz = mrcInstance.header.nz;
     int mod = mrcInstance.header.mod;
 
-    printf("[nx, ny, nz] = [%d, %d, %d]\n", nx, ny, nz);
+    /*printf("[nx, ny, nz] = [%d, %d, %d]\n", nx, ny, nz);*/
 
     char cmd[1024];
     strcpy(cmd, "mkdir -p ");
     strcat(cmd, outputDir);
     system(cmd);
 
-    printf("create output dir success: %s\n", cmd);
+    /*printf("create output dir success: %s\n", cmd);*/
 
 
     /**
@@ -445,7 +446,7 @@ int main ( int argc, char *argv[] )
     char metaFilename[1024];
     /*strcat(metaFilename, "/meta.txt");*/
     sprintf(metaFilename, "%s/meta.txt", outputDir);
-    printf("meta file name: %s\n", metaFilename);
+    /*printf("meta file name: %s\n", metaFilename);*/
     FILE *metaFile = fopen(metaFilename, "w");
     char pDimXStr[64];
     char pDimYStr[64];
