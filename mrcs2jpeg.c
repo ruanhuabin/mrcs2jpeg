@@ -24,6 +24,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <getopt.h>
 #include "jpeglib.h"
 typedef struct _mrc_header__
 {
@@ -92,6 +93,49 @@ void print_mrc_header(mrc_header_t *header)
     printf("image data type   : mod = %d\n", header->mod);
 }
 
+void getMeanStd(float *data, size_t n, float &mean, float &std)
+{
+    float sum = 0.0f;
+    for(size_t i = 0; i < n; i ++)
+    {
+        sum += data[i];
+    }
+
+    mean = sum / n;
+
+    float variance = 0.0f;
+    for(size_t i = 0; i < n; i ++)
+    {
+        variance += pow((data[i] - mean), 2);
+    }
+
+    variance /= n;
+
+    std = sqrt(variance);
+}
+
+
+void preProcessImage(float *data, size_t n, float pMean, float pStd)
+{
+    float mean;
+    float std;
+    getMeanStd(data, n, mean, std);
+
+    float maxValue = mean + (pMean + pStd) * std;
+    float minValue = mean + (pMean -pStd) * std;
+    for(size_t i = 0; i < n; i ++)
+    {
+        if(data[i] > maxValue)
+        {
+            data[i] = maxValue;
+        }
+
+        if(data[i] < minValue)
+        {
+            data[i] = minValue;
+        }
+    }
+}
 void getMinMax(float *data, int n, float& min, float& max, int& minIndex, int& maxIndex)
 {
     min = data[0];
@@ -274,33 +318,160 @@ void write_JPEG_file (char * filename, int quality, unsigned char *image_buffer,
   /* And we're done! */
 }
 
+void usage(const char *program)
+{
+    printf("%s --input <input file name> --output <output directory> --pMean <float value> --pStd <float value> [sNormalized] [sMRC|sJPEG|SRAW]\n", program);
+    printf("e.g: %s --input image.mrcs --output output --pMean 0.0 --pStd 3.0 --sNormalized --sJPEG\n", program);
+}
 int main ( int argc, char *argv[] )
 { 
-    if (argc != 3)
+
+    int c;
+    float pMean = 0.0f;
+    float pStd = 1.0f;
+    int sNormalized = 0;
+    int sJPEG = 0;
+    int sRAW = 0;
+    int sMRC = 0;
+    char inputFilename[256];
+    char outputDir[256];
+    memset(inputFilename, '\0', sizeof(inputFilename));
+    memset(outputDir, '\0', sizeof(outputDir));
+    while(1)
     {
-        printf("Usage: %s <mrc file name> <output directory>\n", argv[0]);
-        printf("e.g: %s image.mrcs output\n", argv[0]);
-        exit(-1);
+        static struct option long_options[] =
+        {
+          {"sNormalized" , no_argument       , 0 , 'n'} ,
+          {"sMRC"        , no_argument       , 0 , 'm'} ,
+          {"sJPEG"       , no_argument       , 0 , 'j'} ,
+          {"sRAW"        , no_argument       , 0 , 'r'} ,
+          {"pMean"       , required_argument , 0 , 'a'} ,
+          {"pStd"        , required_argument , 0 , 's'} ,
+          {"input"       , required_argument , 0 , 'i'} ,
+          {"output"      , required_argument , 0 , 'o'} ,
+          {"help"        , no_argument,        0 , 'h'} ,
+          {0             , 0                 , 0 ,  0 }
+        };
+      /* getopt_long stores the option index here. */
+      int option_index = 0;
+
+      c = getopt_long (argc, argv, "mnjra:s:i:o:", long_options, &option_index);
+
+      /* Detect the end of the options. */
+      if (c == -1)
+        break;
+
+      switch (c)
+        {
+        case 'n':
+          sNormalized = 1;
+          break;
+
+        case 'm':
+          sMRC = 1;
+          break;
+
+        case 'j':
+          sJPEG = 1;
+          break;
+        case 'r':
+          sRAW = 1;
+          break;
+
+        case 'a':
+          pMean = atof(optarg);
+          break;
+
+        case 's':
+          pStd = atof(optarg);
+          break;
+
+        case 'i':
+          /*printf("input file name: %s\n", optarg);*/
+          strcpy(inputFilename, optarg); 
+          break;
+
+        case 'o':
+          strcpy(outputDir, optarg); 
+          break;
+        case 'h':
+          /* getopt_long already printed an error message. */
+          usage(argv[0]);
+          break;
+
+        default:
+          usage(argv[0]);
+          abort ();
+        }
+
+    
     }
 
-    FILE *mrcFile = fopen(argv[1], "rb");
+    /*printf("input = %s, output = %s, sNormalized = %d, sJPEG = %d, sRAW = %d, sMRC = %d,  pMean = %f, pStd = %f\n", inputFilename, outputDir, sNormalized, sJPEG, sRAW, sMRC, pMean, pStd);*/
+
+    /*return 0;*/
+
+    FILE *mrcFile = fopen(inputFilename, "rb");
+
 
     if (mrcFile == NULL)
     {
-        printf("Open input file [%s] failed: [%s:%d]", argv[1], __FILE__, __LINE__);
+        printf("Open input file [%s] failed: [%s:%d]\n", inputFilename, __FILE__, __LINE__);
         exit(-1);
     }
 
 
     mrc_fmt_t mrcInstance;
     fread(&mrcInstance.header, sizeof(mrc_header_t), 1, mrcFile);
-    print_mrc_header(&mrcInstance.header);
+    /*print_mrc_header(&mrcInstance.header);*/
     int nx = mrcInstance.header.nx;
     int ny = mrcInstance.header.ny;
     int nz = mrcInstance.header.nz;
     int mod = mrcInstance.header.mod;
 
-    printf("[nx, ny, nz] = [%d, %d, %d]\n", nx, ny, nz);
+    /*printf("[nx, ny, nz] = [%d, %d, %d]\n", nx, ny, nz);*/
+
+    char cmd[1024];
+    strcpy(cmd, "mkdir -p ");
+    strcat(cmd, outputDir);
+    system(cmd);
+
+    /*printf("create output dir success: %s\n", cmd);*/
+
+
+    /**
+     *  write nx, ny, nz to meta.txt
+     */
+
+    char metaFilename[1024];
+    /*strcat(metaFilename, "/meta.txt");*/
+    sprintf(metaFilename, "%s/meta.txt", outputDir);
+    /*printf("meta file name: %s\n", metaFilename);*/
+    FILE *metaFile = fopen(metaFilename, "w");
+    char pDimXStr[64];
+    char pDimYStr[64];
+    char pDimZStr[64];
+
+
+    if(sJPEG == 1)
+    {
+        fputs("sUChar\n", metaFile);
+    }
+    else
+    {
+        fputs("sReal32\n", metaFile);
+    }
+
+    sprintf(pDimXStr, "pDimX=%d\n", nx);
+    sprintf(pDimYStr, "pDimY=%d\n", ny);
+    sprintf(pDimZStr, "pDimZ=%d\n", 1);
+    
+    fputs(pDimXStr, metaFile);
+    fputs(pDimYStr, metaFile);
+    fputs(pDimZStr, metaFile);
+
+    fclose(metaFile);
+
 
     if(mod != 2)
     {
@@ -308,59 +479,103 @@ int main ( int argc, char *argv[] )
         exit(1);
     }
 
-    int n = nx * ny;
+    size_t n = nx * ny;
     mrcInstance.imageData = (float *)malloc(n * sizeof(float));
     unsigned char *grayData = (unsigned char *)malloc(n * sizeof(unsigned char));
     float min = 0.0f;
     float max = 0.0f;
     int minIndex = 0;
     int maxIndex = 0;
-    char cmd[1024];
-    strcpy(cmd, "mkdir -p ");
-    strcat(cmd, argv[2]);
-    system(cmd);
     
-    char outputJpegFileName[256];
+    char outputImageFileName[256];
+    float mean = 0.0f;
+    float std = 0.0f;
 
-    for(int i = 0; i < nz; i ++)
+    if(sNormalized == 1)
     {
-        fread(mrcInstance.imageData, sizeof(float), nx * ny, mrcFile);
-        getMinMax(mrcInstance.imageData, n, min, max, minIndex, maxIndex); 
-        printf("[min, max, minIndex, maxIndex] = [%f, %f, %d, %d]\n", min, max, minIndex, maxIndex);
-        if(min < 0)
+        for(size_t i = 0; i < nz; i ++)
         {
-            fprintf(stderr, "Warn: min value is < 0, all the elements will be added by value of min\n");
-            /*printFloatData(mrcInstance.imageData, 0, 10, "before add by min");*/
-            addByAbsMin(mrcInstance.imageData, n, min);
-            /*printFloatData(mrcInstance.imageData, 0, 10, "after add by min");*/
-            max = max + fabsf(min);
-            min = 0.0f;
-            fprintf(stderr, "[newMin, newMax]= [%f, %f]\n", min, max);
-
-            if(max < 1e-6)
+            fread(mrcInstance.imageData, sizeof(float), n, mrcFile);
+            getMeanStd(mrcInstance.imageData, n, mean, std);
+            for(size_t j = 0; j < n; j ++)
             {
-                fprintf(stderr, "Error: The max value of input file is zero, please check.\n");
-                exit(1);
+                mrcInstance.imageData[j] = (mrcInstance.imageData[j] - mean) / std * pStd + pMean;
             }
 
+            //Write current image as mrc file format
+            if(sMRC == 1)
+            {
+            
+                sprintf(outputImageFileName, "%s/%d.mrc", outputDir, (i+1));
+                FILE *f = fopen(outputImageFileName, "w");
+
+                mrc_header_t header;
+                memcpy(&header, &mrcInstance.header, sizeof(mrcInstance.header));
+                header.nz = 1;
+                fwrite(&header, sizeof(header),1, f);
+                fwrite(mrcInstance.imageData, sizeof(float), n, f);
+                fclose(f); 
+            }
+            else if(sRAW == 1)
+            {
+                sprintf(outputImageFileName, "%s/%d.raw", outputDir, (i+1));
+                FILE *f = fopen(outputImageFileName, "w");
+                fwrite(mrcInstance.imageData, sizeof(float), n, f);
+                fclose(f); 
+            }
         }
 
-        /*printFloatData(mrcInstance.imageData, 0, 10, "before div by max");*/
-        divByMax(mrcInstance.imageData, n, max);
-        /*printFloatData(mrcInstance.imageData, 0, 10, "after div by max");*/
-        scaleToUncharByMul255(mrcInstance.imageData, n, grayData);
-        /*printUncharData(grayData, 0, 10, "after scale to 255");*/
-
-        sprintf(outputJpegFileName, "%s/%d.jpeg", argv[2], (i+1));
-        write_JPEG_file(outputJpegFileName, 100, grayData, nx, ny);
-
     }
+    else if(sJPEG == 1)
+    {
+        float maxValue = 0.0f;
+        float minValue = 0.0f;
+        for(size_t i = 0; i < nz; i ++)
+        {
+            fread(mrcInstance.imageData, sizeof(float), n, mrcFile);
+            getMeanStd(mrcInstance.imageData, n, mean, std);
+            maxValue = mean + std * (pMean + pStd);
+            minValue = mean + std * (pMean - pStd);
+            for(size_t j = 0; j < n; j ++)
+            {
+                if(mrcInstance.imageData[j] > maxValue)
+                {
+                    mrcInstance.imageData[j] = maxValue;
+                }
+
+                if(mrcInstance.imageData[j] < minValue)
+                {
+                    mrcInstance.imageData[j] = minValue;
+                }
+
+            }
+            getMinMax(mrcInstance.imageData, n, min, max, minIndex, maxIndex); 
+            if(min < 0)
+            {
+                /*fprintf(stderr, "Warn: min value is < 0, all the elements will be added by value of min\n");*/
+                addByAbsMin(mrcInstance.imageData, n, min);
+                max = max + fabsf(min);
+                min = 0.0f;
+                if(max < 1e-6)
+                {
+                    fprintf(stderr, "Warn: The max value of input file is zero, please check.\n");
+                    /*exit(1);*/
+                }
+            }
+
+            divByMax(mrcInstance.imageData, n, max);
+            scaleToUncharByMul255(mrcInstance.imageData, n, grayData);
+
+            sprintf(outputImageFileName, "%s/%d.jpeg", outputDir, (i+1));
+            write_JPEG_file(outputImageFileName, 100, grayData, nx, ny);
+        }
     
+    }
 
     free(mrcInstance.imageData);
     free(grayData);
     fclose(mrcFile);
-
+    
     return EXIT_SUCCESS;
 }
 

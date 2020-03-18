@@ -1,2 +1,7 @@
 tags
 mrcs2jpeg
+output*
+2DClass
+*.swp
+test.c
+a.out
