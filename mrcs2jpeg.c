@@ -455,11 +455,11 @@ int main ( int argc, char *argv[] )
 
     if(sJPEG == 1)
     {
-        fputs("sUChar\n", metaFile);
+        fputs("pDataType=sUChar\n", metaFile);
     }
     else
     {
-        fputs("sReal32\n", metaFile);
+        fputs("pDataType=sReal32\n", metaFile);
     }
 
     sprintf(pDimXStr, "pDimX=%d\n", nx);
