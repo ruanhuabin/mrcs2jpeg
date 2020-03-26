@@ -506,7 +506,7 @@ int main ( int argc, char *argv[] )
             if(sMRC == 1)
             {
             
-                sprintf(outputImageFileName, "%s/%d.mrc", outputDir, (i+1));
+                sprintf(outputImageFileName, "%s/%d.mrc", outputDir, i);
                 FILE *f = fopen(outputImageFileName, "w");
 
                 mrc_header_t header;
@@ -518,7 +518,7 @@ int main ( int argc, char *argv[] )
             }
             else if(sRAW == 1)
             {
-                sprintf(outputImageFileName, "%s/%d.raw", outputDir, (i+1));
+                sprintf(outputImageFileName, "%s/%d.raw", outputDir, i);
                 FILE *f = fopen(outputImageFileName, "w");
                 fwrite(mrcInstance.imageData, sizeof(float), n, f);
                 fclose(f); 
@@ -566,7 +566,7 @@ int main ( int argc, char *argv[] )
             divByMax(mrcInstance.imageData, n, max);
             scaleToUncharByMul255(mrcInstance.imageData, n, grayData);
 
-            sprintf(outputImageFileName, "%s/%d.jpeg", outputDir, (i+1));
+            sprintf(outputImageFileName, "%s/%d.jpeg", outputDir, i);
             write_JPEG_file(outputImageFileName, 100, grayData, nx, ny);
         }
     
