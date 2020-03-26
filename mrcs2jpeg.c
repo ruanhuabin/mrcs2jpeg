@@ -464,7 +464,7 @@ int main ( int argc, char *argv[] )
 
     sprintf(pDimXStr, "pDimX=%d\n", nx);
     sprintf(pDimYStr, "pDimY=%d\n", ny);
-    sprintf(pDimZStr, "pDimZ=%d\n", 1);
+    sprintf(pDimZStr, "pDimZ=%d\n", nz);
     
     fputs(pDimXStr, metaFile);
     fputs(pDimYStr, metaFile);
