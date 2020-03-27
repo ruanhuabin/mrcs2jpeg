@@ -6,3 +6,5 @@ output*
 test.c
 a.out
 mrcs2jpeg
+test
+*.swo

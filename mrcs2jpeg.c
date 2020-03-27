@@ -176,10 +176,19 @@ void divByMax(float *data, int n, float&max)
     }
 
 }
+void divByMax2(float *data, int n, float &min, float &max)
+{
+    float diff = max - min;
+    for(int i = 0; i < n; i ++)
+    {
+        data[i] = (data[i] - min) / diff;
+    }
+}
 
 void scaleToUncharByMul255(float *data, int n, unsigned char *out)
 {
-    for(int i = 0; i < n; i ++)
+    int i = 0;
+    for(i = 0; i < n; i ++)
     {
         out[i] = (unsigned char)(data[i] * 255);
     }
@@ -563,11 +572,11 @@ int main ( int argc, char *argv[] )
                 }
             }
 
-            divByMax(mrcInstance.imageData, n, max);
+            divByMax2(mrcInstance.imageData, n, min, max);
             scaleToUncharByMul255(mrcInstance.imageData, n, grayData);
-
+            
             sprintf(outputImageFileName, "%s/%d.jpeg", outputDir, i);
-            write_JPEG_file(outputImageFileName, 100, grayData, nx, ny);
+            write_JPEG_file(outputImageFileName, 100, grayData, ny, nx);
         }
     
     }
