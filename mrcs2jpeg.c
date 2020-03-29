@@ -26,6 +26,7 @@
 #include <time.h>
 #include <getopt.h>
 #include "jpeglib.h"
+#include "mrc.h"
 typedef struct _mrc_header__
 {
     /* Number of columns, rows, and sections */
@@ -332,7 +333,7 @@ void usage(const char *program)
     printf("%s --input <input file name> --output <output directory> --pMean <float value> --pStd <float value> [sNormalized] [sMRC|sJPEG|SRAW]\n", program);
     printf("e.g: %s --input image.mrcs --output output --pMean 0.0 --pStd 3.0 --sNormalized --sJPEG\n", program);
 }
-int main ( int argc, char *argv[] )
+int main( int argc, char *argv[] )
 { 
 
     int c;
