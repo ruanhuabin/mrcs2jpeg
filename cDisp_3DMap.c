@@ -585,6 +585,7 @@ int main( int argc, char *argv[] )
     }
     free(grayData);
     mrc.close();
+    delete[] im;
     
     return EXIT_SUCCESS;
 }
