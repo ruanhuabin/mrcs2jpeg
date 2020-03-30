@@ -18,6 +18,6 @@
 #define  READSECTION_H
 #include "mrc.h"
 bool readMRCSection(float **im, int &dimx, int &dimy, const char* filename, int axis, int slice);
-bool readMRCSection2(float **im, int &dimx, int &dimy, MRC &mrc, int axis, int slice);
+bool readMRCSection2(float **im, int &dimx, int &dimy, MRC &mrc, char axis, int slice);
 #endif
 

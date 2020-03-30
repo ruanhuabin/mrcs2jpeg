@@ -19,8 +19,8 @@ bool readMRCSection(float **im, int &dimx, int &dimy, const char* filename, int 
         case 0: //along x
             dimx=ny;
             dimy=nz;
-            //ns=slice+nx/2;
-            ns = slice;
+            ns=slice+nx/2;
+            //ns = slice;
             if(ns<0) ns=0;
             if(ns>=nx) ns=nx-1;
             buf=new float[dimx*dimy];
@@ -34,8 +34,8 @@ bool readMRCSection(float **im, int &dimx, int &dimy, const char* filename, int 
         case 1: //along y
             dimx=nx;
             dimy=nz;
-            //ns=slice+ny/2;
-            ns=slice;
+            ns=slice+ny/2;
+            //ns=slice;
             if(ns<0) ns=0;
             if(ns>=nx) ns=nx-1;
             buf=new float[dimx*dimy];
@@ -49,8 +49,8 @@ bool readMRCSection(float **im, int &dimx, int &dimy, const char* filename, int 
         case 2: //along z
             dimx=nx;
             dimy=ny;
-            //ns=slice+nz/2;
-            ns=slice;
+            ns=slice+nz/2;
+            //ns=slice;
             if(ns<0) ns=0;
             if(ns>=nx) ns=nx-1;
             buf=new float[dimx*dimy];
@@ -65,7 +65,7 @@ bool readMRCSection(float **im, int &dimx, int &dimy, const char* filename, int 
 }
 
 // im must be free by the user.  axis=[0,1,2]->[x,y,z] , slice starts from zero along the axis direction.
-bool readMRCSection2(float **im, int &dimx, int &dimy, MRC &mrc, int axis, int slice)
+bool readMRCSection2(float **im, int &dimx, int &dimy, MRC &mrc, char axis, int slice)
 {
     int nx=mrc.getNx();
     int ny=mrc.getNy();
@@ -75,11 +75,11 @@ bool readMRCSection2(float **im, int &dimx, int &dimy, MRC &mrc, int axis, int s
     int ns,i,j;
     switch(axis)
     {
-        case 0: //along x
+        case 'x': //along x
             dimx=ny;
             dimy=nz;
-            //ns=slice+nx/2;
-            ns = slice;
+            ns=slice+nx/2;
+            //ns = slice;
             if(ns<0) ns=0;
             if(ns>=nx) ns=nx-1;
             buf=new float[dimx*dimy];
@@ -90,11 +90,11 @@ bool readMRCSection2(float **im, int &dimx, int &dimy, MRC &mrc, int axis, int s
                 }
             break;
 
-        case 1: //along y
+        case 'y': //along y
             dimx=nx;
             dimy=nz;
-            //ns=slice+ny/2;
-            ns=slice;
+            ns=slice+ny/2;
+            //ns=slice;
             if(ns<0) ns=0;
             if(ns>=nx) ns=nx-1;
             buf=new float[dimx*dimy];
@@ -105,11 +105,11 @@ bool readMRCSection2(float **im, int &dimx, int &dimy, MRC &mrc, int axis, int s
                 }
             break;
 
-        case 2: //along z
+        case 'z': //along z
             dimx=nx;
             dimy=ny;
-            //ns=slice+nz/2;
-            ns=slice;
+            ns=slice+nz/2;
+            //ns=slice;
             if(ns<0) ns=0;
             if(ns>=nx) ns=nx-1;
             buf=new float[dimx*dimy];
