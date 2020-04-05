@@ -329,11 +329,16 @@ void write_JPEG_file (char * filename, int quality, unsigned char *image_buffer,
 
 void usage(const char *program)
 {
-    printf("%s --input <input file name> --output <output directory> --pMean <float value> --pStd <float value> [sNormalized] [sMRC|sJPEG|SRAW]\n", program);
-    printf("e.g: %s --input image.mrcs --output output --pMean 0.0 --pStd 3.0 --sNormalized --sJPEG\n", program);
+    printf("Usage:\n\t%s --input <input file name> --output <output directory> --pMean <float value> --pStd <float value> [sNormalized] [sMRC|sJPEG|SRAW]\n\n", program);
+    printf("\te.g: %s --input image.mrcs --output output --pMean 0.0 --pStd 3.0 --sNormalized --sJPEG\n", program);
 }
 int main( int argc, char *argv[] )
 { 
+    if(argc < 4)
+    {
+        usage(argv[0]);
+        return 1;
+    }
 
     int c;
     float pMean = 0.0f;
@@ -344,8 +349,10 @@ int main( int argc, char *argv[] )
     int sMRC = 0;
     char inputFilename[256];
     char outputDir[256];
+    char outputFilePrefix[256];
     memset(inputFilename, '\0', sizeof(inputFilename));
     memset(outputDir, '\0', sizeof(outputDir));
+    memset(outputFilePrefix, '\0', sizeof(outputFilePrefix));
     while(1)
     {
         static struct option long_options[] =
@@ -358,13 +365,14 @@ int main( int argc, char *argv[] )
           {"pStd"        , required_argument , 0 , 's'} ,
           {"input"       , required_argument , 0 , 'i'} ,
           {"output"      , required_argument , 0 , 'o'} ,
+          {"prefix"      , required_argument , 0 , 'p'} ,
           {"help"        , no_argument       , 0 , 'h'} ,
           {0             , 0                 , 0 , 0 }
         };
       /* getopt_long stores the option index here. */
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "mnjra:s:i:o:", long_options, &option_index);
+      c = getopt_long (argc, argv, "mnjhrp:a:s:i:o:", long_options, &option_index);
 
       /* Detect the end of the options. */
       if (c == -1)
@@ -403,20 +411,26 @@ int main( int argc, char *argv[] )
         case 'o':
           strcpy(outputDir, optarg); 
           break;
+
+        case 'p':
+          strcpy(outputFilePrefix, optarg); 
+          break;
+
         case 'h':
           /* getopt_long already printed an error message. */
           usage(argv[0]);
-          break;
+          return 1;
 
         default:
           usage(argv[0]);
-          abort ();
+          /*abort ();*/
+          return 1;
         }
 
     
     }
 
-    /*printf("input = %s, output = %s, sNormalized = %d, sJPEG = %d, sRAW = %d, sMRC = %d,  pMean = %f, pStd = %f\n", inputFilename, outputDir, sNormalized, sJPEG, sRAW, sMRC, pMean, pStd);*/
+    /*printf("input = %s, output = %s, sNormalized = %d, sJPEG = %d, sRAW = %d, sMRC = %d,  pMean = %f, pStd = %f, --prefix=%s\n", inputFilename, outputDir, sNormalized, sJPEG, sRAW, sMRC, pMean, pStd, outputFilePrefix);*/
 
     /*return 0;*/
 
@@ -454,7 +468,7 @@ int main( int argc, char *argv[] )
 
     char metaFilename[1024];
     /*strcat(metaFilename, "/meta.txt");*/
-    sprintf(metaFilename, "%s/meta.txt", outputDir);
+    sprintf(metaFilename, "%s/%s_meta.txt",outputDir, outputFilePrefix);
     /*printf("meta file name: %s\n", metaFilename);*/
     FILE *metaFile = fopen(metaFilename, "w");
     char pDimXStr[64];
@@ -515,7 +529,7 @@ int main( int argc, char *argv[] )
             if(sMRC == 1)
             {
             
-                sprintf(outputImageFileName, "%s/%d.mrc", outputDir, i);
+                sprintf(outputImageFileName, "%s/%s_%d.mrc",outputDir, outputFilePrefix, i);
                 FILE *f = fopen(outputImageFileName, "w");
 
                 mrc_header_t header;
@@ -527,7 +541,7 @@ int main( int argc, char *argv[] )
             }
             else if(sRAW == 1)
             {
-                sprintf(outputImageFileName, "%s/%d.raw", outputDir, i);
+                sprintf(outputImageFileName, "%s/%s_%d.raw", outputDir, outputFilePrefix, i);
                 FILE *f = fopen(outputImageFileName, "w");
                 fwrite(mrcInstance.imageData, sizeof(float), n, f);
                 fclose(f); 
@@ -575,7 +589,7 @@ int main( int argc, char *argv[] )
             divByMax2(mrcInstance.imageData, n, min, max);
             scaleToUncharByMul255(mrcInstance.imageData, n, grayData);
             
-            sprintf(outputImageFileName, "%s/%d.jpeg", outputDir, i);
+            sprintf(outputImageFileName, "%s/%s_%d.jpeg",outputDir, outputFilePrefix, i);
             write_JPEG_file(outputImageFileName, 100, grayData, ny, nx);
         }
     
